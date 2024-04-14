@@ -1,9 +1,11 @@
 from typing import List, Tuple, Dict
 
+
 class Cell:
     def __init__(self, letter: str, score: int):
         self.letter = letter
         self.score = score
+
 
 class Puzzle:
     def __init__(self, cells: List[List[Cell]]):
@@ -20,3 +22,14 @@ class Puzzle:
         for row in self.cells:
             result += ' '.join(f'{cell.letter}({cell.score})' for cell in row) + '\n'
         return result.strip()
+
+
+if __name__ == '__main__':
+    cells = [
+        [Cell('A', 1), Cell('B', 1), Cell('C', 1), Cell('D', 1)],
+        [Cell('E', 1), Cell('F', 1), Cell('G', 1), Cell('H', 1)],
+        [Cell('I', 1), Cell('J', 1), Cell('K', 1), Cell('L', 1)],
+        [Cell('M', 1), Cell('N', 1), Cell('O', 1), Cell('P', 1)],
+    ]
+    puzzle = Puzzle(cells)
+    print(puzzle)
