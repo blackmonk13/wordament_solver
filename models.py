@@ -10,6 +10,16 @@ class Cell:
             self.letter = self.letter[1:]
         if self.suffix:
             self.letter = self.letter[:-1]
+        self.options = letter.split('/')
+        if len(self.options) == 1:
+            self.options = self.options[0]
+
+    def matches(self, letter: str) -> bool:
+        if isinstance(self.options, str):
+            return self.options == letter
+        else:
+            return letter in self.options
+
 
 class Puzzle:
     def __init__(self, cells: List[List[Cell]]):
@@ -33,7 +43,7 @@ class Puzzle:
             for row in range(self.nrows):
                 for col in range(self.ncols):
                     cell = self.cells[row][col]
-                    if cell.letter == letter:
+                    if cell.matches(letter):
                         score += cell.score
         return score
 
