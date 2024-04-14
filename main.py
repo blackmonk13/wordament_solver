@@ -5,7 +5,7 @@ DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0),
               (1, 1), (1, -1), (-1, 1), (-1, -1)]
 
 
-def find_words(puzzle: Puzzle, word_list: Set[str]) -> List[str]:
+def find_words(puzzle: Puzzle, word_list: Set[str]) -> List[Tuple[str, int]]:
     def dfs(row: int, col: int, word: str, visited: Set[Tuple[int, int]], prefix: str, suffix: str) -> None:
         cell = puzzle[row, col]
         if cell.letter == '':
@@ -22,7 +22,8 @@ def find_words(puzzle: Puzzle, word_list: Set[str]) -> List[str]:
             for option in cell.options:
                 word += option
                 if word in word_list and len(word) >= 3 and word.startswith(prefix) and word.endswith(suffix):
-                    results.add((word, puzzle.get_score(word)))
+                    score = puzzle.get_score(word)
+                    results.add((word, score))
 
                 for dr, dc in DIRECTIONS:
                     r, c = row + dr, col + dc
@@ -41,8 +42,7 @@ def find_words(puzzle: Puzzle, word_list: Set[str]) -> List[str]:
     for row in range(puzzle.nrows):
         for col in range(puzzle.ncols):
             dfs(row, col, '', set(), '', '')
-    return [word for word, score in results]
-
+    return sorted(list(results), key=lambda x: x[1], reverse=True)
 
 def load_word_list(filename: str) -> Set[str]:
     with open(filename, 'r') as file:
@@ -52,10 +52,10 @@ def load_word_list(filename: str) -> Set[str]:
 if __name__ == '__main__':
     word_list = load_word_list('data/words_alpha.txt')
     cells = [
-        [Cell('T', 2), Cell('R', 2), Cell('A', 2), Cell('S', 2)],
-        [Cell('N', 2), Cell('O', 2), Cell('G', 4), Cell('G', 4)],
-        [Cell('O', 2), Cell('U/M', 20), Cell('L', 3), Cell('A', 2)],
-        [Cell('W', 6), Cell('R', 2), Cell('O', 2), Cell('P', 4)],
+        [Cell('E', 2), Cell('S', 2), Cell('F', 5), Cell('E', 2)],
+        [Cell('L', 3), Cell('A', 2), Cell('B', 5), Cell('D', 3)],
+        [Cell('R', 2), Cell('S', 2), Cell('M', 4), Cell('G', 4)],
+        [Cell('E', 2), Cell('I', 2), Cell('U', 4), Cell('E', 2)],
     ]
     puzzle = Puzzle(cells)
     words = find_words(puzzle, word_list)
