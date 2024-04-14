@@ -5,29 +5,30 @@ DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -
 
 
 def find_words(puzzle: Puzzle, word_list: Set[str]) -> List[str]:
-    def dfs(row: int, col: int, word: str) -> None:
+    def dfs(row: int, col: int, word: str, visited: Set[Tuple[int, int]]) -> None:
         cell = puzzle[row, col]
-        word += cell.letter
-        if word not in word_set:
+        if cell.letter == '':
             return
-        
-        if word in word_list and len(word) > 2:
-            # print(f'{word} - length {len(word)}')
+        if (row, col) in visited:
+            return
+        visited.add((row, col))
+        word += cell.letter
+        if word in word_list and len(word) >= 3:
             results.add(word)
         for dr, dc in DIRECTIONS:
             r, c = row + dr, col + dc
-            if 0 <= r < puzzle.nrows and 0 <= c < puzzle.ncols:
-                dfs(r, c, word)
-        
-        if len(word) > 1:
-            word_set.discard(word)
+            if (
+                0 <= r < puzzle.nrows
+                and 0 <= c < puzzle.ncols
+                and puzzle[r, c].letter != ''
+            ):
+                dfs(r, c, word, visited)
+        visited.remove((row, col))
 
-    word_set = set(word_list)
-    word_set.update([word[:i] for word in word_list for i in range(1, len(word))])
     results = set()
     for row in range(puzzle.nrows):
         for col in range(puzzle.ncols):
-            dfs(row, col, '')
+            dfs(row, col, '', set())
     return list(results)
 
 def load_word_list(filename: str) -> Set[str]:
