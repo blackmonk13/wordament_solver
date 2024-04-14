@@ -1,11 +1,15 @@
 from typing import List, Tuple, Dict
 
-
 class Cell:
     def __init__(self, letter: str, score: int):
         self.letter = letter
         self.score = score
-
+        self.prefix = letter.startswith('-')
+        self.suffix = letter.endswith('-')
+        if self.prefix:
+            self.letter = self.letter[1:]
+        if self.suffix:
+            self.letter = self.letter[:-1]
 
 class Puzzle:
     def __init__(self, cells: List[List[Cell]]):
@@ -22,6 +26,16 @@ class Puzzle:
         for row in self.cells:
             result += ' '.join(f'{cell.letter}({cell.score})' for cell in row) + '\n'
         return result.strip()
+    
+    def get_score(self, word: str) -> int:
+        score = 0
+        for letter in word:
+            for row in range(self.nrows):
+                for col in range(self.ncols):
+                    cell = self.cells[row][col]
+                    if cell.letter == letter:
+                        score += cell.score
+        return score
 
 
 if __name__ == '__main__':
