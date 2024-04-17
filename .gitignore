@@ -161,3 +161,9 @@ cython_debug/
 
 # Data files
 data/
+detect_text_areas.py
+pp_2.py
+puzzle_parser.py
+tests.ipynb
+show_img.py
+pp_3.py

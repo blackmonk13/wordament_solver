@@ -19,6 +19,11 @@ class Cell:
             return self.options == letter
         else:
             return letter in self.options
+        
+    def __str__(self) -> str:
+        result = ''
+        result += ' '.join(f'{self.letter}({self.score})')
+        return result.strip()
 
 
 class Puzzle:
