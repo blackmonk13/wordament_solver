@@ -5,6 +5,7 @@ import pytesseract
 import math
 import numpy as np
 
+from utils import get_latest_image
 from words_finder import find_words, load_word_list
 from models import Cell, Puzzle
 
@@ -131,21 +132,6 @@ def get_grid(filename:str) -> cv2.typing.MatLike:
 
     return cropped_img
 
-def get_latest_image(dirpath, valid_extensions=('jpg', 'jpeg', 'png')):
-    """
-    Get the latest image file in the given directory.
-    """
-    # Get filepaths of all files and dirs in the given dir
-    valid_files = [os.path.join(dirpath, filename) for filename in os.listdir(dirpath)]
-    # Filter out directories, no-extension, and wrong extension files
-    valid_files = [f for f in valid_files if '.' in f and \
-        f.rsplit('.', 1)[-1] in valid_extensions and os.path.isfile(f)]
-
-    if not valid_files:
-        raise ValueError("No valid images in %s" % dirpath)
-
-    return max(valid_files, key=os.path.getmtime)
-
 if __name__ == '__main__':
     latest_image = get_latest_image("data/")
     # Load the cropped image of the grid using OpenCV
@@ -160,8 +146,8 @@ if __name__ == '__main__':
     print(puzzle)
 
     # Find all valid words in the puzzle
-    word_list = load_word_list('data/words_alpha.txt')
-    words = find_words(puzzle, word_list)
+    trie = load_word_list()
+    words = find_words(puzzle, trie)
 
     # Print the highest-scoring words
     print('Highest-scoring words:')
