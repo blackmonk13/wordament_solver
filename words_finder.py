@@ -1,3 +1,5 @@
+import nltk
+from nltk.corpus import words
 from typing import List, Set, Tuple
 from models import Puzzle, Cell, Trie
 
@@ -45,17 +47,18 @@ def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int]]:
     return sorted(list(results), key=lambda x: x[1], reverse=True)
 
 
-def load_word_list(filename: str) -> Trie:
+def load_word_list() -> Trie:
     trie = Trie()
-    with open(filename, 'r') as file:
-        for word in file.read().split():
-            if len(word) >= 3:
-                trie.insert(word.strip().upper())
+    nltk.download('words')
+    word_list = words.words()
+    for word in word_list:
+        if len(word) >= 3:
+            trie.insert(word.strip().upper())
     return trie
 
 
 if __name__ == '__main__':
-    trie = load_word_list('data/words_alpha.txt')
+    trie = load_word_list()
     cells = [
         [Cell('E', 2), Cell('S', 2), Cell('F', 5), Cell('E', 2)],
         [Cell('L', 3), Cell('A', 2), Cell('B', 5), Cell('D', 3)],
