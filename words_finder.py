@@ -13,10 +13,10 @@ def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[in
 
         if cell.letter == '':
             return
-        
+
         if (row, col) in visited:
             return
-        
+
         visited.add((row, col))
 
         if cell.prefix:
@@ -27,8 +27,13 @@ def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[in
             for option in cell.options:
                 word += option
                 if trie.search(word) and len(word) >= 3 and word.startswith(prefix) and word.endswith(suffix):
-                    score = puzzle.get_score(path)  # Get the score based on the path
-                    results.add((word, score, tuple(path)))
+                    # Get the score based on the path
+                    score = puzzle.get_score(path)
+
+                    # Only add the word if it's not already in the results
+                    # this ensures only one instance of every word
+                    if word not in results:
+                        results[word] = (score, tuple(path))
 
                 for dr, dc in DIRECTIONS:
                     r, c = row + dr, col + dc
@@ -45,11 +50,13 @@ def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[in
 
         visited.remove((row, col))
 
-    results = set()
+    results = {}
     for row in range(puzzle.nrows):
         for col in range(puzzle.ncols):
             dfs(row, col, '', set(), '', '', [(row, col)])
-    return sorted(list(results), key=lambda x: x[1], reverse=True)
+            
+    # Sort by score
+    return sorted([(word, score, path) for word, (score, path) in results.items()], key=lambda x: x[1], reverse=True)
 
 
 def load_word_list() -> Trie:
@@ -72,4 +79,8 @@ if __name__ == '__main__':
     ]
     puzzle = Puzzle(cells)
     words = find_words(puzzle, trie)
-    print(words)
+
+    # Print the highest-scoring words
+    print('Highest-scoring words:')
+    for word, score, path in words:
+        print(f'{word}: {score}')

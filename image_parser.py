@@ -255,8 +255,6 @@ if __name__ == '__main__':
     puzzle = Puzzle(cells)
     print(puzzle)
 
-    
-
     # Find all valid words in the puzzle
     trie = load_word_list()
     words = find_words(puzzle, trie)
