@@ -67,14 +67,11 @@ class Puzzle:
             result += ' '.join(f'{cell.letter}({cell.score})' for cell in row) + '\n'
         return result.strip()
     
-    def get_score(self, word: str) -> int:
+    def get_score(self, path: List[Tuple[int, int]]) -> int:
         score = 0
-        for letter in word:
-            for row in range(self.nrows):
-                for col in range(self.ncols):
-                    cell = self.cells[row][col]
-                    if cell.matches(letter):
-                        score += cell.score
+        for row, col in path:
+            cell = self.cells[row][col]
+            score += cell.score
         return score
 
 

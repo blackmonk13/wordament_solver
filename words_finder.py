@@ -10,10 +10,13 @@ DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0),
 def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[int, int]]]]:
     def dfs(row: int, col: int, word: str, visited: Set[Tuple[int, int]], prefix: str, suffix: str, path: List[Tuple[int, int]]) -> None:
         cell = puzzle[row, col]
+
         if cell.letter == '':
             return
+        
         if (row, col) in visited:
             return
+        
         visited.add((row, col))
 
         if cell.prefix:
@@ -24,7 +27,7 @@ def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[in
             for option in cell.options:
                 word += option
                 if trie.search(word) and len(word) >= 3 and word.startswith(prefix) and word.endswith(suffix):
-                    score = puzzle.get_score(word)
+                    score = puzzle.get_score(path)  # Get the score based on the path
                     results.add((word, score, tuple(path)))
 
                 for dr, dc in DIRECTIONS:
