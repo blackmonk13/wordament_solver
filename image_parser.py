@@ -11,6 +11,17 @@ from models import Cell, Puzzle
 
 
 def get_score(cell: cv2.typing.MatLike) -> int:
+    """takes an image of a cell as input, 
+    applies image processing techniques to isolate 
+    the score in the cell, and uses OCR to extract 
+    the score as an integer.
+
+    Args:
+        cell (cv2.typing.MatLike): cell image
+
+    Returns:
+        int: the score of the cell
+    """    
     # Split the cell into a 4x4 grid
     subcell_size = cell.shape[0] // 4, cell.shape[1] // 4
     subcells = [cell[int(y):int(y+subcell_size[1]), int(x):int(x+subcell_size[0])]
@@ -53,7 +64,17 @@ def get_score(cell: cv2.typing.MatLike) -> int:
 
 
 def get_letter(cell: cv2.typing.MatLike) -> str:
+    """takes an image of a cell as input, 
+    applies image processing techniques to 
+    isolate the letter in the cell, and uses 
+    OCR to extract the letter as a string.
 
+    Args:
+        cell (cv2.typing.MatLike): cell image
+
+    Returns:
+        str: the letter of the cell
+    """    
     # Get the cell dimensions
     height, width = cell.shape
 
@@ -82,6 +103,18 @@ def get_letter(cell: cv2.typing.MatLike) -> str:
 
 
 def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
+    """takes an image of the puzzle grid as input, 
+    splits it into individual cells, and for each cell, 
+    it calls get_score and get_letter to extract the 
+    score and letter. It then creates a Cell object for 
+    each cell and returns a 2D list of these objects.
+
+    Args:
+        grid (cv2.typing.MatLike): cropped image of the puzzle grid
+
+    Returns:
+        List[List[Cell]]: 2D list of Cell objects (Grid)
+    """    
     # Split the cropped image into individual cells
     grid_size = 4  # Fixed grid size of 4x4
     cell_size = grid.shape[0] / grid_size, grid.shape[1] / grid_size
@@ -116,8 +149,17 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
     return grid_cells
 
 
-def get_grid(filename: str) -> cv2.typing.MatLike:
-    screenshot = cv2.imread(filename)
+def get_grid(file_path: str) -> cv2.typing.MatLike:
+    """reads an image file, converts it to grayscale, 
+    and crops it to isolate the puzzle grid.
+
+    Args:
+        filename (str): image file path
+
+    Returns:
+        cv2.typing.MatLike: _description_
+    """    
+    screenshot = cv2.imread(file_path)
 
     screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
 
@@ -139,6 +181,16 @@ def get_grid(filename: str) -> cv2.typing.MatLike:
 
 
 def generate_grid_image(puzzle: Puzzle) -> np.ndarray:
+    """takes a Puzzle object as input and generates 
+    an image of the puzzle grid. It draws the grid lines, 
+    and for each cell, it draws the letter and score.
+
+    Args:
+        puzzle (Puzzle): the puzzle to generate the image for
+
+    Returns:
+        np.ndarray: the image of the puzzle grid
+    """    
     cell_size = 70  # Size of each cell in pixels
     img_size = cell_size * puzzle.nrows, cell_size * puzzle.ncols
     img = np.full(img_size, 255, dtype=np.uint8)  # Create a white image
@@ -182,6 +234,19 @@ def generate_grid_image(puzzle: Puzzle) -> np.ndarray:
 
 
 def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.ndarray) -> np.ndarray:
+    """ takes a tuple containing a word, its score, 
+    and the path of cells it covers in the puzzle, 
+    and an image of the puzzle grid. It draws arrows 
+    on the image to represent the path of the word 
+    in the puzzle.
+
+    Args:
+        word_data (Tuple[str, int, List[Tuple[int, int]]]): tuple containing a word, its score, and the path of cells it covers in the puzzle
+        img (np.ndarray): image of the puzzle grid
+
+    Returns:
+        np.ndarray: the image of the puzzle grid with arrows drawn on it
+    """    
     word, score, path = word_data
     arrow_color = (0, 0, 255)  # Blue color for the arrow
     arrow_thickness = 2
@@ -200,6 +265,15 @@ def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.
 
 
 def display_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.ndarray) -> None:
+    """takes a tuple containing a word, its score, and the path of cells 
+    it covers in the puzzle, and an image of the puzzle grid. 
+    It creates a larger image with the grid image as the background, 
+    adds the word and its score to the larger image, and displays the image.
+
+    Args:
+        word_data (Tuple[str, int, List[Tuple[int, int]]]): tuple containing a word, its score, and the path of cells it covers in the puzzle
+        img (np.ndarray): image of the puzzle grid
+    """    
     word, score, _ = word_data
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.7
