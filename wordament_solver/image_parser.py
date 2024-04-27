@@ -150,35 +150,38 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
     return grid_cells
 
 
-def get_grid(file_path: str) -> cv2.typing.MatLike:
-    """reads an image file, converts it to grayscale, 
-    and crops it to isolate the puzzle grid.
+def get_grid(file_path: str, cropped: bool = False) -> cv2.typing.MatLike:
+    """Reads an image file, converts it to grayscale, and crops it to isolate the puzzle grid.
 
     Args:
         filename (str): image file path
+        cropped (bool): whether the image is already cropped or not
 
     Returns:
-        cv2.typing.MatLike: _description_
+        cv2.typing.MatLike: cropped image of the puzzle grid
     """
     screenshot = cv2.imread(file_path)
 
     screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
 
-    # Get the cell dimensions
-    height, width = screenshot_gray.shape
+    if not cropped:
+        # Get the cell dimensions
+        height, width = screenshot_gray.shape
 
-    # Define the ROI (Region of Interest)
-    # Cropping an area from the center
-    start_x = (2 / 100 * width)
-    start_y = (21 / 100 * height)
-    end_x = (width - (.25 / 100 * width))
-    end_y = (height - (35 / 100 * height))
+        # Define the ROI (Region of Interest)
+        # Cropping an area from the center
+        start_x = (2 / 100 * width)
+        start_y = (21 / 100 * height)
+        end_x = (width - (.25 / 100 * width))
+        end_y = (height - (35 / 100 * height))
 
-    # Crop the image
-    cropped_img = screenshot_gray[int(start_y):int(
-        end_y), int(start_x):int(end_x)]
+        # Crop the image
+        cropped_img = screenshot_gray[int(start_y):int(end_y), int(start_x):int(end_x)]
+    else:
+        cropped_img = screenshot_gray
 
     return cropped_img
+
 
 
 def generate_grid_image(puzzle: Puzzle) -> cv2.typing.MatLike:
