@@ -77,10 +77,10 @@ class Puzzle:
 
 if __name__ == '__main__':
     cells = [
-        [Cell('A', 1), Cell('B', 1), Cell('C', 1), Cell('D', 1)],
-        [Cell('E', 1), Cell('F', 1), Cell('G', 1), Cell('H', 1)],
-        [Cell('I', 1), Cell('J', 1), Cell('K', 1), Cell('L', 1)],
-        [Cell('M', 1), Cell('N', 1), Cell('O', 1), Cell('P', 1)],
+        [Cell('E', 2), Cell('S', 2), Cell('F', 5), Cell('E', 2)],
+        [Cell('L', 3), Cell('A', 2), Cell('B', 5), Cell('D', 3)],
+        [Cell('R', 2), Cell('S', 2), Cell('M', 4), Cell('G', 4)],
+        [Cell('E', 2), Cell('I', 2), Cell('U', 4), Cell('E', 2)],
     ]
     puzzle = Puzzle(cells)
     print(puzzle)

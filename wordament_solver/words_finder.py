@@ -1,7 +1,7 @@
 import nltk
 from nltk.corpus import words
 from typing import List, Set, Tuple
-from models import Puzzle, Cell, Trie
+from .models import Puzzle, Cell, Trie
 
 DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0),
               (1, 1), (1, -1), (-1, 1), (-1, -1)]

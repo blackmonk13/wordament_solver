@@ -3,11 +3,12 @@ from typing import List, Tuple
 import cv2
 import pytesseract
 import math
+import base64
 import numpy as np
 
-from utils import get_latest_image
-from words_finder import find_words, load_word_list
-from models import Cell, Puzzle
+from .utils import get_latest_image
+from .words_finder import find_words, load_word_list
+from .models import Cell, Puzzle
 
 
 def get_score(cell: cv2.typing.MatLike) -> int:
@@ -21,7 +22,7 @@ def get_score(cell: cv2.typing.MatLike) -> int:
 
     Returns:
         int: the score of the cell
-    """    
+    """
     # Split the cell into a 4x4 grid
     subcell_size = cell.shape[0] // 4, cell.shape[1] // 4
     subcells = [cell[int(y):int(y+subcell_size[1]), int(x):int(x+subcell_size[0])]
@@ -74,7 +75,7 @@ def get_letter(cell: cv2.typing.MatLike) -> str:
 
     Returns:
         str: the letter of the cell
-    """    
+    """
     # Get the cell dimensions
     height, width = cell.shape
 
@@ -114,7 +115,7 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
 
     Returns:
         List[List[Cell]]: 2D list of Cell objects (Grid)
-    """    
+    """
     # Split the cropped image into individual cells
     grid_size = 4  # Fixed grid size of 4x4
     cell_size = grid.shape[0] / grid_size, grid.shape[1] / grid_size
@@ -158,7 +159,7 @@ def get_grid(file_path: str) -> cv2.typing.MatLike:
 
     Returns:
         cv2.typing.MatLike: _description_
-    """    
+    """
     screenshot = cv2.imread(file_path)
 
     screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
@@ -180,7 +181,7 @@ def get_grid(file_path: str) -> cv2.typing.MatLike:
     return cropped_img
 
 
-def generate_grid_image(puzzle: Puzzle) -> np.ndarray:
+def generate_grid_image(puzzle: Puzzle) -> cv2.typing.MatLike:
     """takes a Puzzle object as input and generates 
     an image of the puzzle grid. It draws the grid lines, 
     and for each cell, it draws the letter and score.
@@ -189,8 +190,8 @@ def generate_grid_image(puzzle: Puzzle) -> np.ndarray:
         puzzle (Puzzle): the puzzle to generate the image for
 
     Returns:
-        np.ndarray: the image of the puzzle grid
-    """    
+        cv2.typing.MatLike: the image of the puzzle grid
+    """
     cell_size = 70  # Size of each cell in pixels
     img_size = cell_size * puzzle.nrows, cell_size * puzzle.ncols
     img = np.full(img_size, 255, dtype=np.uint8)  # Create a white image
@@ -233,7 +234,7 @@ def generate_grid_image(puzzle: Puzzle) -> np.ndarray:
     return img
 
 
-def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.ndarray) -> np.ndarray:
+def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: cv2.typing.MatLike) -> cv2.typing.MatLike:
     """ takes a tuple containing a word, its score, 
     and the path of cells it covers in the puzzle, 
     and an image of the puzzle grid. It draws arrows 
@@ -242,11 +243,11 @@ def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.
 
     Args:
         word_data (Tuple[str, int, List[Tuple[int, int]]]): tuple containing a word, its score, and the path of cells it covers in the puzzle
-        img (np.ndarray): image of the puzzle grid
+        img (cv2.typing.MatLike): image of the puzzle grid
 
     Returns:
-        np.ndarray: the image of the puzzle grid with arrows drawn on it
-    """    
+        cv2.typing.MatLike: the image of the puzzle grid with arrows drawn on it
+    """
     word, score, path = word_data
     arrow_color = (0, 0, 255)  # Blue color for the arrow
     arrow_thickness = 2
@@ -258,21 +259,24 @@ def draw_word_arrows(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.
         start_point = (start_col * 70 + 35, start_row * 70 + 35)
         end_point = (end_col * 70 + 35, end_row * 70 + 35)
 
-        cv2.arrowedLine(img, start_point, end_point, arrow_color, arrow_thickness)
+        cv2.arrowedLine(img, start_point, end_point,
+                        arrow_color, arrow_thickness)
 
     return img
 
 
-
-def display_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: np.ndarray) -> None:
+def generate_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: cv2.typing.MatLike) -> cv2.typing.MatLike:
     """takes a tuple containing a word, its score, and the path of cells 
     it covers in the puzzle, and an image of the puzzle grid. 
     It creates a larger image with the grid image as the background, 
-    adds the word and its score to the larger image, and displays the image.
+    adds the word and its score to the larger image, and returns the image.
 
     Args:
         word_data (Tuple[str, int, List[Tuple[int, int]]]): tuple containing a word, its score, and the path of cells it covers in the puzzle
-        img (np.ndarray): image of the puzzle grid
+        img (cv2.typing.MatLike): image of the puzzle grid
+
+    Returns:
+        cv2.typing.MatLike: word image
     """    
     word, score, _ = word_data
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -282,11 +286,13 @@ def display_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: n
 
     # Calculate the text size and position for the word and score
     word_text_size, _ = cv2.getTextSize(word, font, font_scale, font_thickness)
-    score_text_size, _ = cv2.getTextSize(str(score), font, font_scale, font_thickness)
+    score_text_size, _ = cv2.getTextSize(
+        str(score), font, font_scale, font_thickness)
 
     # Stack the word and score vertically with more spacing between them
     text_width = max(word_text_size[0], score_text_size[0])
-    text_height = word_text_size[1] + score_text_size[1] + 30  # Increase the spacing between the word and score
+    # Increase the spacing between the word and score
+    text_height = word_text_size[1] + score_text_size[1] + 30
 
     # Add spacing between the grid and both the word and score
     grid_spacing = 10
@@ -294,30 +300,48 @@ def display_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: n
     text_width += grid_spacing
 
     # Create a larger image with the grid image as the background
-    result_img = np.full((text_height + img.shape[0], text_width + img.shape[1], 3), 255, dtype=np.uint8)
+    result_img = np.full(
+        (text_height + img.shape[0], text_width + img.shape[1], 3), 255, dtype=np.uint8)
 
     # Convert the img variable to a color image before assigning it to the result_img
     img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     result_img[text_height:, :img.shape[1]] = img_color
 
     # Add the word and score to the larger image with the added spacing
-    result_img = cv2.putText(result_img, word, (10 + grid_spacing, text_height - word_text_size[1] - 5), font, font_scale, (0, 0, 0), font_thickness, line_type)
-    result_img = cv2.putText(result_img, f'Score: {score}', (10 + grid_spacing, text_height - 5), font, font_scale, (0, 0, 0), font_thickness, line_type)
+    result_img = cv2.putText(result_img, word, (10 + grid_spacing, text_height -
+                             word_text_size[1] - 5), font, font_scale, (0, 0, 0), font_thickness, line_type)
+    result_img = cv2.putText(result_img, f'Score: {
+                             score}', (10 + grid_spacing, text_height - 5), font, font_scale, (0, 0, 0), font_thickness, line_type)
 
     # Draw a border line around the entire grid (fix the offset)
     border_thickness = 2
     border_color = (0, 0, 0)
     top_left = (grid_spacing, text_height)
-    bottom_right = (grid_spacing + img.shape[1] - 1, text_height + img.shape[0] - 1)
-    cv2.rectangle(result_img, top_left, bottom_right, border_color, border_thickness)
+    bottom_right = (
+        grid_spacing + img.shape[1] - 1, text_height + img.shape[0] - 1)
+    cv2.rectangle(result_img, top_left, bottom_right,
+                  border_color, border_thickness)
 
-    cv2.imshow('Word Image', result_img)
+    return result_img
+
+
+def display_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: cv2.typing.MatLike) -> None:
+    word, score, _ = word_data
+    cv2.imshow(f"{word} - {score}", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows
 
 
+def image_to_base64(img: cv2.typing.MatLike, ext: str = '.jpg') -> str:
+    # convert the image to a base64-encoded string
+    _, buffer = cv2.imencode(ext, img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+    return img_base64
+
+
 if __name__ == '__main__':
     latest_image = get_latest_image("data/")
+
     # Load the cropped image of the grid using OpenCV
     grid = get_grid(latest_image)
 
@@ -337,11 +361,12 @@ if __name__ == '__main__':
     print('Highest-scoring words:')
     for word, score, path in words:
         print(f'{word}: {score}')
-    
+
     img = generate_grid_image(puzzle)
-    
+
     for i, word_data in enumerate(words):
         word_img = img.copy()  # Create a copy of the original image for each word
         word_img = draw_word_arrows(word_data, word_img)
+        word_img = generate_word_image(word_data, word_img)
 
         display_word_image(word_data, word_img)
