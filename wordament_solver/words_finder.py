@@ -8,19 +8,20 @@ DIRECTIONS = [(0, 1), (1, 0), (0, -1), (-1, 0),
 
 
 def find_words(puzzle: Puzzle, trie: Trie) -> List[Tuple[str, int, List[Tuple[int, int]]]]:
-    """finds all the words in the given puzzle that are present in the Trie. 
-    It uses a DFS algorithm to explore all possible paths in the puzzle. 
-    For each path, it checks if the formed word is present in the Trie and 
-    if it meets certain conditions (length >= 3, starts with prefix, ends with suffix). 
-    If so, it calculates the score of the path and adds the word to 
-    the results. The results are then sorted by score in descending order.
+    """Finds all the words in the given puzzle that are present in the Trie.
+
+    This function uses a DFS algorithm to explore all possible paths in the puzzle.
+    For each path, it checks if the formed word is present in the Trie and
+    if it meets certain conditions (length >= 3, starts with prefix, ends with suffix).
+    If so, it calculates the score of the path and adds the word to the results.
+    The results are then sorted by score in descending order.
 
     Args:
-        puzzle (Puzzle): the puzzle to find words in
-        trie (Trie): the Trie containing the words
+        puzzle (Puzzle): The puzzle to find words in.
+        trie (Trie): The Trie containing the words.
 
     Returns:
-        List[Tuple[str, int, List[Tuple[int, int]]]]: List of tuples containing the word, score and path
+        List[Tuple[str, int, List[Tuple[int, int]]]]: List of tuples containing the word, score and path.
     """
     def dfs(row: int, col: int, word: str, visited: Set[Tuple[int, int]], prefix: str, suffix: str, path: List[Tuple[int, int]]) -> None:
         cell = puzzle[row, col]
