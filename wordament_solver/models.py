@@ -17,6 +17,14 @@ class Trie:
             node = node.children[char]
         node.end_of_word = True
 
+    def has_prefix(self, prefix: str) -> bool:
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return True
+
     def search(self, word: str) -> bool:
         node = self.root
         for char in word:
