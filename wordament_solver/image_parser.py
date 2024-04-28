@@ -5,6 +5,7 @@ import pytesseract
 import math
 import base64
 import numpy as np
+from scipy import stats
 
 from .utils import get_latest_image
 from .words_finder import find_words, load_word_list
@@ -150,38 +151,83 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
     return grid_cells
 
 
-def get_grid(file_path: str, cropped: bool = False) -> cv2.typing.MatLike:
+def aspect_ratio(contour: cv2.typing.MatLike) -> float:
+    x, y, w, h = cv2.boundingRect(contour)
+    return float(w) / float(h)
+
+
+def get_grid(file_path: str, cropped: bool = False, size_ratio_threshold: float = 20000, aspect_ratio_threshold: tuple = (0.8, 1.2)) -> cv2.typing.MatLike:
     """Reads an image file, converts it to grayscale, and crops it to isolate the puzzle grid.
 
     Args:
         filename (str): image file path
         cropped (bool): whether the image is already cropped or not
+        size_ratio_threshold (float): minimum contour area for filtering
+        aspect_ratio_threshold (tuple): desired range for aspect ratio filtering
 
     Returns:
         cv2.typing.MatLike: cropped image of the puzzle grid
+
+    Raises:
+        ValueError: No contours found in the image.
     """
     screenshot = cv2.imread(file_path)
 
     screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
 
     if not cropped:
-        # Get the cell dimensions
-        height, width = screenshot_gray.shape
+        # Apply thresholding
+        _, thresholded_image = cv2.threshold(
+            screenshot_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        # Define the ROI (Region of Interest)
-        # Cropping an area from the center
-        start_x = (2 / 100 * width)
-        start_y = (21 / 100 * height)
-        end_x = (width - (.25 / 100 * width))
-        end_y = (height - (35 / 100 * height))
+        # Find contours
+        contours, _ = cv2.findContours(
+            thresholded_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Filter contours based on size
+        filtered_contours = [contour for contour in contours if cv2.contourArea(
+            contour) > size_ratio_threshold]
+
+        # Calculate the aspect ratio for each contour and filter them based on the desired range
+        aspect_ratios = [aspect_ratio(contour)
+                         for contour in filtered_contours]
+
+        valid_contours = [contour for contour, aspect in zip(
+            filtered_contours, aspect_ratios) if aspect_ratio_threshold[0] < aspect < aspect_ratio_threshold[1]]
+        # Calculate the area of each contour
+        areas = [cv2.contourArea(contour) for contour in valid_contours]
+
+        # Check if areas is not empty
+        if not areas:
+            raise ValueError(
+                "No contours found in the image. Please adjust the size_ratio_threshold or aspect_ratio_threshold arguments.")
+
+        # Find the most common area size
+        most_common_area = stats.mode(areas)
+        most_common_area = most_common_area.mode
+
+        # Keep only the contours that are close to the most common size
+        # You may need to adjust the threshold depending on your specific images
+        threshold = most_common_area * 0.1
+        similar_contours = [contour for contour in valid_contours if abs(
+            cv2.contourArea(contour) - most_common_area) < threshold]
+
+        # Get the bounding rectangles for the similar contours
+        rects = [cv2.boundingRect(contour) for contour in similar_contours]
+
+        # Calculate the grid position and size from the bounding rectangles
+        grid_x = min(x for (x, y, w, h) in rects)
+        grid_y = min(y for (x, y, w, h) in rects)
+        grid_w = max(x+w for (x, y, w, h) in rects) - grid_x
+        grid_h = max(y+h for (x, y, w, h) in rects) - grid_y
 
         # Crop the image
-        cropped_img = screenshot_gray[int(start_y):int(end_y), int(start_x):int(end_x)]
+        cropped_img = screenshot_gray[grid_y:grid_y +
+                                      grid_h, grid_x:grid_x+grid_w]
     else:
         cropped_img = screenshot_gray
 
     return cropped_img
-
 
 
 def generate_grid_image(puzzle: Puzzle) -> cv2.typing.MatLike:
@@ -280,7 +326,7 @@ def generate_word_image(word_data: Tuple[str, int, List[Tuple[int, int]]], img: 
 
     Returns:
         cv2.typing.MatLike: word image
-    """    
+    """
     word, score, _ = word_data
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.7
