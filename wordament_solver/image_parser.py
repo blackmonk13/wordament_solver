@@ -11,6 +11,14 @@ from .utils import get_latest_image
 from .words_finder import find_words, load_word_list
 from .models import Cell, Puzzle
 
+def rescale_image(image: cv2.typing.MatLike, size: int = 100) -> cv2.typing.MatLike:
+    try:
+        height, width = image.shape
+    except ValueError:
+        height, width, _ = image.shape
+    new_width = int((size / 100) * width)
+    new_height = int((size / 100) * height)
+    return cv2.resize(image, (new_width, new_height), interpolation = cv2.INTER_LINEAR)
 
 def get_score(cell: cv2.typing.MatLike) -> int:
     """takes an image of a cell as input, 
@@ -91,6 +99,10 @@ def get_letter(cell: cv2.typing.MatLike) -> str:
 
     # Crop the image
     cropped_img = cell[int(start_y):int(end_y), int(start_x):int(end_x)]
+
+    # cv2.imshow('Letter Image', cropped_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # Apply thresholding to the cell image
     _, letter_bin = cv2.threshold(
