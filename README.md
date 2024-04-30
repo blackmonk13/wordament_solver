@@ -16,7 +16,7 @@
 
 ---
 
-<p align="center"> A simple tool to help you find words in Wordament puzzles using image processing and a trie data structure.
+<p align="center"> A simple tool to help you find words in Wordament puzzles using OpenCV.
     <br>
 </p>
 
