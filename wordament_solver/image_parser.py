@@ -11,55 +11,110 @@ from .utils import get_latest_image
 from .words_finder import find_words, load_word_list
 from .models import Cell, Puzzle
 
+
+def aspect_ratio(contour: cv2.typing.MatLike) -> float:
+    """
+    Calculates the aspect ratio of a contour.
+
+    Args:
+        contour (cv2.typing.MatLike): The contour whose aspect ratio is to be calculated.
+
+    Returns:
+        float: The aspect ratio of the contour.
+    """
+
+    x, y, w, h = cv2.boundingRect(contour)
+    return float(w) / float(h)
+
+
 def rescale_image(image: cv2.typing.MatLike, size: int = 100) -> cv2.typing.MatLike:
+    """
+    Rescales an image to a given size.
+
+    Args:
+        image (cv2.typing.MatLike): The image to be rescaled.
+        size (int, optional): The size to rescale the image to. Defaults to 100.
+
+    Returns:
+        cv2.typing.MatLike: The rescaled image.
+    """
+
     try:
         height, width = image.shape
     except ValueError:
         height, width, _ = image.shape
     new_width = int((size / 100) * width)
     new_height = int((size / 100) * height)
-    return cv2.resize(image, (new_width, new_height), interpolation = cv2.INTER_LINEAR)
+    return cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
 
-def get_score(cell: cv2.typing.MatLike) -> int:
-    """takes an image of a cell as input, 
-    applies image processing techniques to isolate 
-    the score in the cell, and uses OCR to extract 
-    the score as an integer.
+
+def calc_rects_pos_and_size(contours: List[cv2.typing.MatLike]) -> cv2.typing.Rect:
+    """
+    Calculates the position and size of a rectangle that bounds a list of contours.
 
     Args:
-        cell (cv2.typing.MatLike): cell image
+        contours (List[cv2.typing.MatLike]): The list of contours.
 
     Returns:
-        int: the score of the cell
+        cv2.typing.Rect: The position and size of the bounding rectangle.
     """
-    # Split the cell into a 4x4 grid
-    subcell_size = cell.shape[0] // 4, cell.shape[1] // 4
-    subcells = [cell[int(y):int(y+subcell_size[1]), int(x):int(x+subcell_size[0])]
-                for y in range(0, cell.shape[0], subcell_size[1]) for x in range(0, cell.shape[1], subcell_size[0])]
 
-    # Extract the score from the top left subcell
-    score_subcell = subcells[0]
+    # Get the bounding rectangles for the similar contours
+    rects = [cv2.boundingRect(contour) for contour in contours]
 
-    # Get the dimensions of the image
-    height, width = score_subcell.shape
+    # Calculate the grid position and size from the bounding rectangles
+    rects_x = min(x for (x, y, w, h) in rects)
+    rects_y = min(y for (x, y, w, h) in rects)
+    width = max(x+w for (x, y, w, h) in rects) - rects_x
+    height = max(y+h for (x, y, w, h) in rects) - rects_y
 
-    # Define the ROI (Region of Interest)
-    # For a 65x65 image, cropping a 30x30 area from the center
-    start_x = (width - (77 / 100 * width)) // 2
-    start_y = (height - (46 / 100 * height)) // 2
-    end_x = start_x + (95 / 100 * width)
-    end_y = start_y + (92 / 100 * height)
+    return rects_x, rects_y, width, height
 
-    # Crop the image
-    cropped_img = score_subcell[int(start_y):int(
-        end_y), int(start_x):int(end_x)]
 
-    # cv2.imshow('Cropped Image', cropped_img)
+def pad_image(image: cv2.typing.MatLike, padding: int = 30) -> cv2.typing.MatLike:
+    """
+    Adds padding to an image.
+
+    Args:
+        image (cv2.typing.MatLike): The image to be padded.
+        padding (int, optional): The amount of padding to add. Defaults to 30.
+
+    Returns:
+        cv2.typing.MatLike: The padded image.
+    """
+
+    # Calculate the average color of the image
+    avg_color_per_row = np.average(image, axis=0)
+    avg_color = np.average(avg_color_per_row, axis=0)
+    avg_color = np.uint8(avg_color)
+
+    # Add padding to the letter image
+    padded_img = cv2.copyMakeBorder(
+        image, padding, padding, padding, padding, cv2.BORDER_CONSTANT, value=avg_color.tolist())
+
+    return padded_img
+
+
+def get_score(score_img: cv2.typing.MatLike) -> int:
+    """
+    Extracts the score from an image.
+
+    Args:
+        score_img (cv2.typing.MatLike): The image of the score.
+
+    Returns:
+        int: The score extracted from the image.
+    """
+
+
+    padded_score = pad_image(score_img)
+
+    # cv2.imshow('Score Image', cell)
     # cv2.waitKey(0)
 
     # Rescale the image
     rescaled_image = cv2.resize(
-        cropped_img, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+        padded_score, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
 
     # Apply thresholding to the score subcell image
     _, score_thresh = cv2.threshold(
@@ -73,40 +128,27 @@ def get_score(cell: cv2.typing.MatLike) -> int:
     return score
 
 
-def get_letter(cell: cv2.typing.MatLike) -> str:
-    """takes an image of a cell as input, 
-    applies image processing techniques to 
-    isolate the letter in the cell, and uses 
-    OCR to extract the letter as a string.
+def get_letter(letter_img: cv2.typing.MatLike) -> str:
+    """
+    Extracts the letter from an image.
 
     Args:
-        cell (cv2.typing.MatLike): cell image
+        letter_img (cv2.typing.MatLike): The image of the letter.
 
     Returns:
-        str: the letter of the cell
+        str: The letter extracted from the image.
     """
-    # Get the cell dimensions
-    height, width = cell.shape
 
-    # print(f"Height: {height} x Width: {width}")
 
-    # Define the ROI (Region of Interest)
-    # Cropping an area from the center
-    start_x = (4 / 100 * width)
-    start_y = (23 / 100 * height)
-    end_x = (width - (8 / 100 * width))
-    end_y = (height - (15 / 100 * height))
-
-    # Crop the image
-    cropped_img = cell[int(start_y):int(end_y), int(start_x):int(end_x)]
-
-    # cv2.imshow('Letter Image', cropped_img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    padded_letter = pad_image(letter_img)
 
     # Apply thresholding to the cell image
     _, letter_bin = cv2.threshold(
-        cropped_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        padded_letter, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    cv2.imshow('Letter Image', letter_bin)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     # Extract the letter from the image
     letter_config = r'--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ/-'
@@ -116,34 +158,128 @@ def get_letter(cell: cv2.typing.MatLike) -> str:
     return letter
 
 
-def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
-    """takes an image of the puzzle grid as input, 
-    splits it into individual cells, and for each cell, 
-    it calls get_score and get_letter to extract the 
-    score and letter. It then creates a Cell object for 
-    each cell and returns a 2D list of these objects.
+def get_cell_letter_and_score_images(cell: cv2.typing.MatLike) -> Tuple[cv2.typing.MatLike, cv2.typing.MatLike]:
+    """
+    Extracts the images of the letter and score from a cell image.
 
     Args:
-        grid (cv2.typing.MatLike): cropped image of the puzzle grid
+        cell (cv2.typing.MatLike): The image of the cell.
 
     Returns:
-        List[List[Cell]]: 2D list of Cell objects (Grid)
+        Tuple[cv2.typing.MatLike, cv2.typing.MatLike]: A tuple containing the images of the letter and score.
     """
+
+    cell = rescale_image(cell, 180)
+
+    # Color the grayscale image
+    cell_color = cv2.cvtColor(cell, cv2.COLOR_GRAY2BGR)
+
+    # Cell Dimensions
+    height, width = cell.shape
+
+    # Apply adaptive thresholding
+    letter_bin = cv2.adaptiveThreshold(
+        cell, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+    # Dilate the image
+    kernel = np.ones((3, 3), np.uint8)
+    letter_bin = cv2.dilate(letter_bin, kernel, iterations=1)
+
+    # Find contours
+    letter_contours, hierarchy = cv2.findContours(
+        letter_bin, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Initialize empty lists to hold the letter and score contours
+    letter_contours_list = []
+    score_contours_list = []
+
+    # Draw rectangles around the letter and score
+    if letter_contours:
+        for i, contour in enumerate(letter_contours):
+            # Filter contours based on size
+            if cv2.contourArea(contour) > 500:
+                x, y, w, h = cv2.boundingRect(contour)
+                # Check if this contour is the outermost one (i.e., it has no parent)
+                if hierarchy[0][i][3] == -1:
+                    # Ignore the largest contour that covers the cell
+                    if w < width * 0.9 and h < height * 0.9:
+                        # If the contour is in the upper left part of the cell and its height is less than half of the cell height, it's likely to be a score
+                        if y < height * 0.3 and h < height * 0.3 and x < width * 0.5:
+                            score_contours_list.append(contour)
+                            # Green rectangle for score
+                            # cv2.rectangle(cell_color, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                        # If the contour is positioned in the midsection of the image
+                        elif y < height * .9 and y > height * .2:
+                            letter_contours_list.append(contour)
+                            # Red rectangle for letter
+                            # cv2.rectangle(cell_color, (x, y), (x+w, y+h), (0, 0, 255), 2)
+
+    # Get the position and size of the letters
+    ltr_x, ltr_y, ltr_w, ltr_h = calc_rects_pos_and_size(letter_contours_list)
+
+    # Red rectangle for letter
+    # cv2.rectangle(cell_color, (ltr_x, ltr_y),
+    #               (ltr_x+ltr_w, ltr_y+ltr_h), (0, 0, 255), 2)
+
+    cropped_letter = cell[ltr_y:ltr_y+ltr_h, ltr_x:ltr_x+ltr_w]
+
+    # Get the position and size of the scores
+    scr_x, scr_y, scr_w, scr_h = calc_rects_pos_and_size(score_contours_list)
+
+    # Green rectangle for score
+    # cv2.rectangle(cell_color, (scr_x, scr_y),
+    #               (scr_x+scr_w, scr_y+scr_h), (0, 255, 0), 2)
+
+    cropped_score = cell[scr_y:scr_y+scr_h, scr_x:scr_x+scr_w]
+
+    # cv2.imshow('Cell Image', cell_color)
+    # cv2.imshow('Cropped Letter', cropped_letter)
+    # cv2.imshow('Cropped Score', cropped_score)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    return cropped_letter, cropped_score
+
+
+def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
+    """
+    Extracts the data from a grid of cells.
+
+    Args:
+        grid (cv2.typing.MatLike): The image of the grid.
+
+    Returns:
+        List[List[Cell]]: A 2D list of Cell objects representing the grid.
+    """
+
     # Split the cropped image into individual cells
     grid_size = 4  # Fixed grid size of 4x4
-    cell_size = grid.shape[0] / grid_size, grid.shape[1] / grid_size
+    grid_height, grid_width = grid.shape
+    cell_size = grid_height / grid_size, grid_width / grid_size
     cells = [grid[int(y):int(y+cell_size[1]), int(x):int(x+cell_size[0])]
-             for y in range(0, math.ceil(grid.shape[0]), math.ceil(cell_size[1])) for x in range(0, math.ceil(grid.shape[1]), math.ceil(cell_size[0]))]
+             for y in range(0, math.ceil(grid_height), math.ceil(cell_size[1])) for x in range(0, math.ceil(grid_width), math.ceil(cell_size[0]))]
+    print(f'Number of cells before validation: {len(cells)}')
+
+    # Validate cells
+    valid_cells = []
+    for cell in cells:
+        cell_height, cell_width = cell.shape
+        cell_aspect_ratio = cell_width / cell_height
+        print(f'Height: {cell_height}, Width: {cell_width}')
+        if .8 < cell_aspect_ratio < 1.2:
+            valid_cells.append(cell)
+    print(f'Number of cells after validation: {len(valid_cells)}')
 
     cells_list = []
 
-    for cell in cells:
+    for cell in valid_cells:
+        letter_img, score_img = get_cell_letter_and_score_images(cell)
         # Get the score for the cell
-        score = get_score(cell)
+        score = get_score(score_img)
         # print(f'Score: {score} Cell: {cell_id}')
 
         # Get the letter for the cell
-        letter = get_letter(cell)
+        letter = get_letter(letter_img)
 
         # FIXME: Hardcoded I in case it does not detect letter
         # based on testing its most likely I but not always
@@ -161,11 +297,6 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
     grid_cells = [cells_list[i:i+4] for i in range(0, len(cells_list), 4)]
 
     return grid_cells
-
-
-def aspect_ratio(contour: cv2.typing.MatLike) -> float:
-    x, y, w, h = cv2.boundingRect(contour)
-    return float(w) / float(h)
 
 
 def get_grid(file_path: str, cropped: bool = False, size_ratio_threshold: float = 20000, aspect_ratio_threshold: tuple = (0.8, 1.2)) -> cv2.typing.MatLike:
