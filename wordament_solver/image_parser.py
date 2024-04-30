@@ -144,9 +144,9 @@ def get_letter(letter_img: cv2.typing.MatLike) -> str:
     _, letter_bin = cv2.threshold(
         padded_letter, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    cv2.imshow('Letter Image', letter_bin)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('Letter Image', letter_bin)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # Extract the letter from the image
     letter_config = r'--psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ/-'
