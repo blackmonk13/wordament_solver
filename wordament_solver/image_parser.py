@@ -106,7 +106,6 @@ def get_score(score_img: cv2.typing.MatLike) -> int:
         int: The score extracted from the image.
     """
 
-
     padded_score = pad_image(score_img)
 
     # cv2.imshow('Score Image', cell)
@@ -138,7 +137,6 @@ def get_letter(letter_img: cv2.typing.MatLike) -> str:
     Returns:
         str: The letter extracted from the image.
     """
-
 
     padded_letter = pad_image(letter_img)
 
@@ -258,17 +256,17 @@ def get_grid_data(grid: cv2.typing.MatLike) -> List[List[Cell]]:
     cell_size = grid_height / grid_size, grid_width / grid_size
     cells = [grid[int(y):int(y+cell_size[1]), int(x):int(x+cell_size[0])]
              for y in range(0, math.ceil(grid_height), math.ceil(cell_size[1])) for x in range(0, math.ceil(grid_width), math.ceil(cell_size[0]))]
-    print(f'Number of cells before validation: {len(cells)}')
+    # print(f'Number of cells before validation: {len(cells)}')
 
     # Validate cells
     valid_cells = []
     for cell in cells:
         cell_height, cell_width = cell.shape
         cell_aspect_ratio = cell_width / cell_height
-        print(f'Height: {cell_height}, Width: {cell_width}')
+        # print(f'Height: {cell_height}, Width: {cell_width}')
         if .8 < cell_aspect_ratio < 1.2:
             valid_cells.append(cell)
-    print(f'Number of cells after validation: {len(valid_cells)}')
+    # print(f'Number of cells after validation: {len(valid_cells)}')
 
     cells_list = []
 

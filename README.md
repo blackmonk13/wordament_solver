@@ -49,60 +49,8 @@ pip install -r requirements.txt
 
 ## 🎈 Usage <a name="usage"></a>
 
-You can use Wordament Solver in two ways:
-
-1. **Sample puzzle:** Define a sample puzzle using the `Cell` class and pass it to the `find_words` function. The function will return a list of highest-scoring words along with their scores and paths.
-
-Example:
-```python
-if __name__ == '__main__':
-    trie = load_word_list()
-    cells = [
-        [Cell('E', 2), Cell('S', 2), Cell('F', 5), Cell('E', 2)],
-        [Cell('L', 3), Cell('A', 2), Cell('B', 5), Cell('D', 3)],
-        [Cell('R', 2), Cell('S', 2), Cell('M', 4), Cell('G', 4)],
-        [Cell('E', 2), Cell('I', 2), Cell('U', 4), Cell('E', 2)],
-    ]
-    puzzle = Puzzle(cells)
-    words = find_words(puzzle, trie)
-
-    # Print the highest-scoring words
-    print('Highest-scoring words:')
-    for word, score, path in words:
-        print(f'{word}: {score}')
 ```
-
-2. **Screenshot of the game:** Use the `get_latest_image` function to load a screenshot of the game, extract the grid data, and pass it to the `find_words` function. The function will return a list of highest-scoring words along with their scores and paths. Additionally, it will display an OpenCV image with the word score and a grid with arrows showing how to match the word.
-
-Example:
-```python
-if __name__ == '__main__':
-    latest_image = get_latest_image("data/")
-    # Load the cropped image of the grid using OpenCV
-    grid = get_grid(latest_image)
-
-    cells = get_grid_data(grid)
-
-    # Create a Puzzle object from the extracted data
-    puzzle = Puzzle(cells)
-    print(puzzle)
-
-    # Find all valid words in the puzzle
-    trie = load_word_list()
-    words = find_words(puzzle, trie)
-
-    # Print the highest-scoring words
-    print('Highest-scoring words:')
-    for word, score, path in words:
-        print(f'{word}: {score}')
-
-    img = generate_grid_image(puzzle)
-
-    for i, word_data in enumerate(words):
-        word_img = img.copy()  # Create a copy of the original image for each word
-        word_img = draw_word_arrows(word_data, word_img)
-
-        display_word_image(word_data, word_img)
+python -m wordament_solver -h
 ```
 
 ## ⛏️ Built Using <a name = "built_using"></a>
@@ -113,6 +61,7 @@ if __name__ == '__main__':
 - [Pillow](https://pillow.readthedocs.io/en/stable/) - Image Processing Library
 - [PyTesseract](https://github.com/madmaze/pytesseract) - OCR Library
 - [NLTK](https://www.nltk.org/) - Natural Language Processing Library
+- [SciPy](https://docs.scipy.org/doc/scipy/reference/) - Statistics Library
 
 ## ✍️ Authors <a name = "authors"></a>
 
