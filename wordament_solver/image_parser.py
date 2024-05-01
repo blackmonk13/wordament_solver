@@ -90,7 +90,7 @@ def pad_image(image: cv2.typing.MatLike, padding: int = 30) -> cv2.typing.MatLik
 
     # Add padding to the letter image
     padded_img = cv2.copyMakeBorder(
-        image, padding, padding, padding, padding, cv2.BORDER_CONSTANT, value=avg_color.tolist())
+        image, padding, padding, padding, padding, cv2.BORDER_CONSTANT, value=avg_color.tolist()) # type: ignore
 
     return padded_img
 
