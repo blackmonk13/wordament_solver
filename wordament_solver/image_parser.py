@@ -84,7 +84,7 @@ def pad_image(image: cv2.typing.MatLike, padding: int = 30) -> cv2.typing.MatLik
     """
 
     # Calculate the average color of the image
-    avg_color_per_row = np.average(image, axis=0)
+    avg_color_per_row = np.average(image, axis=0) # type: ignore
     avg_color = np.average(avg_color_per_row, axis=0)
     avg_color = np.uint8(avg_color)
 
