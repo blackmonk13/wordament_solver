@@ -49,9 +49,26 @@ pip install -r requirements.txt
 
 ## 🎈 Usage <a name="usage"></a>
 
+### CLI Usage
+
 ```
 python -m wordament_solver -h
 ```
+When you have a cropped grid image like the following 
+
+<img src="sample_images/grid/regular_grid.jpg" alt="Grid Image" width="400" height="auto">
+
+
+``` python
+python -m wordament_solver --image sample_images/grid/regular_grid.jpg --cropped --view
+```
+
+### Example Usage
+
+For more detailed examples and use cases, refer to the `example.ipynb` notebook. It covers common scenarios and demonstrates how to use the package when imported as a package in other projects.
+
+### Usage as a package
+
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 

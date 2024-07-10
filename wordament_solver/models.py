@@ -37,13 +37,13 @@ class Cell:
     def __init__(self, letter: str, score: int):
         self.letter = letter
         self.score = score
-        self.prefix = letter.startswith('-')
-        self.suffix = letter.endswith('-')
+        self.prefix = letter.endswith('-')
+        self.suffix = letter.startswith('-')
         if self.prefix:
-            self.letter = self.letter[1:]
-        if self.suffix:
             self.letter = self.letter[:-1]
-        self.options = letter.split('/')
+        if self.suffix:
+            self.letter = self.letter[1:]
+        self.options = self.letter.split('/')
         if len(self.options) == 1:
             self.options = self.options[0]
 
